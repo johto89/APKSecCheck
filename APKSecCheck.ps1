@@ -33,8 +33,7 @@ $patterns = @{
         '\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b',
         '(\b|\d+)[A-F0-9]{32}(\b|\d+)',
         '(\b|\d+)[A-F0-9]{40}(\b|\d+)',
-        '(\b|\d+)[A-F0-9]{64}(\b|\d+)'
-
+        '(\b|\d+)[A-F0-9]{64}(\b|\d+)',
         '-----BEGIN\s+(?:RSA\s+)?PRIVATE\s+KEY-----[\s\S]*?-----END\s+(?:RSA\s+)?PRIVATE\s+KEY-----',
         '-----BEGIN\s+(?:DSA\s+)?PRIVATE\s+KEY-----[\s\S]*?-----END\s+(?:DSA\s+)?PRIVATE\s+KEY-----',
         '-----BEGIN\s+(?:EC\s+)?PRIVATE\s+KEY-----[\s\S]*?-----END\s+(?:EC\s+)?PRIVATE\s+KEY-----',
@@ -79,14 +78,16 @@ $patterns = @{
         'Fragment\s+fragment\s*=\s*.+?\.instantiate\(',
         'getSupportFragmentManager\(\)\.findFragmentById\(',
         'getFragmentManager\(\)\.findFragmentById\(',
-        'loadUrl\s*\(\s*"javascript:'
+        'loadUrl\s*\(\s*"javascript:',
+        'extends PreferenceActivity'
     )
     "SQL Injection" = @(
         'db\.rawQuery\s*\(',
         'db\.execSQL\s*\(',
         'SQLiteDatabase\.rawQuery\s*\(',
         'getReadableDatabase\(\)',
-        'getWritableDatabase\(\)'
+        'getWritableDatabase\(\)',
+        'openOrCreateDatabase'
     )
     "Weak Manifest Permissions" = @(
         # Dangerous system permissions
@@ -147,11 +148,240 @@ $patterns = @{
         'com\.thirdparty\.superuser', 
         'com\.koushikdutta\.superuser',
         'com\.zachspong\.temprootremovejb',
-        'com\.ramdroid\.appquarantine'
+        'com\.ramdroid\.appquarantine',
+        '/system/bin/su',
+        '/system/xbin/su',
+        '/sbin/su',
+        'supersu',
+        'superuser'
     )
-        "Insecure SSL/TLS Configuration" = @(
+    "Insecure SSL/TLS Configuration" = @(
         'HttpsURLConnection\.setDefaultHostnameVerifier\(null\)',
-        'Cipher\.getInstance\(\s*[''"](?:DES|DESede)(?:/\w+)*[''"]'
+        'Cipher\.getInstance\(\s*[''"](?:DES|DESede)(?:/\w+)*[''"]',
+        'SSLContext\.getInstance\(\s*[''"]SSL[''"]',
+        'SSLContext\.getInstance\(\s*[''"]TLS[''"]',
+        'SSLContext\.getInstance\(\s*[''"]TLSv1[''"]',
+        'SSLContext\.getInstance\(\s*[''"]TLSv1\.1[''"]',
+        'ALLOW_ALL_HOSTNAME_VERIFIER',
+        'AllowAllHostnameVerifier',
+        'setHostnameVerifier\s*\(\s*[^)]*ALLOW_ALL',
+        'X509TrustManager\s*\{[^\}]*return\s+null',
+        'X509TrustManager\s*\{[^\}]*return\s+true'
+    )
+    # New categories from first file (paste.txt)
+    "Data Storage" = @(
+        # Shared Preferences
+        'getSharedPreferences\s*\(',
+        'SharedPreferences\.Editor',
+        'edit\(\)\.putString',
+        'MODE_WORLD_READABLE',
+        'MODE_WORLD_WRITEABLE',
+        
+        # SQLite Database (some already in SQL Injection)
+        'openOrCreateDatabase',
+        'execSQL',
+        'rawQuery',
+        
+        # Firebase Database
+        '\.firebaseio\.com',
+        'FirebaseDatabase\.getInstance',
+        
+        # Realm Database
+        'RealmConfiguration',
+        'Realm\.getInstance',
+        
+        # Internal/External Storage
+        'openFileOutput',
+        'FileInputStream',
+        'getExternalFilesDir',
+        'getExternalFilesDirs',
+        'getExternalCacheDir', 
+        'getExternalCacheDirs',
+        'getCacheDir',
+        'getExternalStorageState',
+        'getExternalStorageDirectory',
+        'getExternalStoragePublicDirectory',
+        
+        # Temporary Files
+        'createTempFile\s*\(',
+        'File\.createTempFile'
+    )
+    "Logging and Information Disclosure" = @(
+        # Various logging mechanisms
+        'Log\.v\s*\(',
+        'Log\.d\s*\(',
+        'Log\.i\s*\(',
+        'Log\.w\s*\(',
+        'Log\.e\s*\(',
+        'logger\.log\s*\(',
+        'logger\.logp\s*\(',
+        'log\.info',
+        'System\.out\.print',
+        'System\.err\.print',
+        'printStackTrace\s*\(',
+        
+        # Push Notifications
+        'NotificationManager',
+        'setContentTitle\s*\(',
+        'setContentText\s*\(',
+        
+        # Screenshots & UI
+        'FLAG_SECURE',
+        'inputType\s*=\s*[''"]textPassword[''"]',
+        'textAutoComplete',
+        'textAutoCorrect',
+        'textNoSuggestions'
+    )
+    "Memory Management" = @(
+        # Memory related
+        '\.flush\s*\(',
+        'ClipboardManager',
+        'setPrimaryClip\s*\(',
+        'OnPrimaryClipChangedListener'
+    )
+    "Hardcoded Sensitive Information" = @(
+        # Various hardcoded patterns
+        'String (password|key|token|username|url|database|secret|bearer) = "',
+        '_key"|_secret"|_token"|_client_id"|_api"|_debug"|_prod"|_stage"'
+    )
+    "Cryptography" = @(
+        # Crypto related
+        'SecretKeySpec\s*\(',
+        'IvParameterSpec\s*\(',
+        'Signature\.getInstance\s*\(',
+        'MessageDigest\.getInstance\s*\(',
+        'Mac\.getInstance\s*\(',
+        'Cipher\.getInstance\s*\(',
+        # Weak ciphers
+        'Cipher\.getInstance\s*\([''"][^''"]*/ECB/[^''"]*[''"]',
+        'Cipher\.getInstance\s*\([''"][^''"]*/CBC/[^''"]*[''"]',
+        'Cipher\.getInstance\s*\([''"][^''"]*/None/[^''"]*[''"]',
+        'Cipher\.getInstance\s*\([''"]DES[^''"]*[''"]',
+        'Cipher\.getInstance\s*\([''"]AES[^''"]*[''"]',
+        'Cipher\.getInstance\s*\([''"]RC4[^''"]*[''"]',
+        'PKCS1Padding',
+        # Random
+        'new Random\s*\(',
+        'SHA1PRNG',
+        'Dual_EC_DRBG'
+    )
+    "Biometric Authentication" = @(
+        'BiometricPrompt',
+        'BiometricManager',
+        'FingerprintManager',
+        'CryptoObject',
+        'setInvalidatedByBiometricEnrollment'
+    )
+    "Network Security" = @(
+        # Network Security Config
+        'android:networkSecurityConfig',
+        'network_security_config\.xml',
+        
+        # MITM and HTTP
+        'HttpURLConnection\)',
+        'SSLCertificateSocketFactory\.getInsecure',
+        
+        # Certificate verification
+        'X509Certificate',
+        'checkServerTrusted\s*\(',
+        'checkClientTrusted\s*\(',
+        'getAcceptedIssuers\s*\(',
+        'onReceivedSslError',
+        'sslErrorHandler',
+        '\.proceed\s*\(',
+        
+        # Certificate pinning
+        '<pin-set',
+        '<pin digest',
+        'certificatePinner',
+        'trustManagerFactory',
+        
+        # Security provider
+        'ProviderInstaller\.installIfNeeded',
+        'ProviderInstaller\.installIfNeededAsync'
+    )
+    "Component Security" = @(
+        # Permissions
+        'checkCallingOrSelfPermission',
+        'checkSelfPermission',
+        
+        # XSS and Code execution
+        '\.evaluateJavascript\s*\(',
+        '\.loadUrl\s*\("javascript:',
+        'Runtime\.getRuntime\(\)\.exec\s*\(',
+        
+        # WebView settings
+        'setAllowFileAccess\s*\(',
+        'setAllowFileAccessFromFileURLs\s*\(',
+        'setAllowUniversalAccessFromFileURLs\s*\(',
+        'setAllowContentAccess\s*\(',
+        'setWebContentsDebuggingEnabled\s*\(',
+        'addJavascriptInterface\s*\(',
+        
+        # URL handling
+        'shouldOverrideUrlLoading\s*\(',
+        'shouldInterceptRequest\s*\(',
+        
+        # Serialization
+        'getSerializable\s*\(',
+        'getSerializableExtra\s*\(',
+        'new Gson\(\)'
+    )
+    "WebView Cleanup" = @(
+        '\.clearCache\s*\(',
+        '\.deleteAllData\s*\(',
+        '\.removeAllCookies\s*\(',
+        '\.deleteRecursively\s*\(',
+        '\.clearFormData\s*\('
+    )
+    "Application Management" = @(
+        'AppUpdateManager',
+        'application/vnd\.android\.package-archive',
+        'setDataAndType\s*\(',
+        'installApp\s*\('
+    )
+    "Development and Debugging" = @(
+        'StrictMode\.setThreadPolicy',
+        'StrictMode\.setVmPolicy',
+        'RuntimeException\s*\(',
+        'UncaughtExceptionHandler\s*\(',
+        'isDebuggable',
+        'isDebuggerConnected'
+    )
+    "Obfuscation Detection" = @(
+        'package\s+[a-z](\.[a-z0-9]){2,}',
+        '(?:class|interface)\s+[a-z](?:\$[a-z0-9]){1,}(?!\w)',
+        '(?:class|interface)\s+[a-z]{1,2}(?![a-zA-Z])',
+        '(?:class|interface)\s+([a-z])\1+(?!\w)',
+        'void\s+[a-z](?:\$[a-z0-9])*\s*\(',  
+        '(?:public|private|protected)\s+[a-z](?:\$[a-z0-9])*\s*\(',
+        '(?:String|int|boolean|void)\s+[a-z][0-9]+(?:\s*=|\s*;)',
+        '(?:abstract|final)\s+class\s+[a-z]{1,2}[0-9]*(?!\w)',
+        '(?:[a-z]{1,2}\.){3,}[a-z]{1,2}\s*\(',
+        'import\s+[a-z](\.[a-z0-9]){2,}\*',
+        'import\s+static\s+[a-z](\.[a-z0-9]){2,}[^.]*',
+        '(?:class|interface)\s+[a-zA-Z]{2,3}(?:[0-9]+[a-zA-Z]|[a-zA-Z]+[0-9])+(?!\w)',
+        '(?:class|interface)\s+[a-z](?!\w)(?<!Map)(?<!Set)(?<!Id)(?<!Io)',
+        '\$\$[a-zA-Z]+\$[0-9]+',
+        '\$[a-zA-Z]+\$[a-zA-Z0-9]+(?<!Builder)(?<!Factory)(?<!Helper)'
+    )
+    "Security Detection Mechanisms" = @(
+        # Anti-debugging
+        'isDebuggable',
+        'isDebuggerConnected',
+        
+        # Integrity checks
+        '\.getEntry\s*\("classes',
+        
+        # Emulator detection
+        'Build\.MODEL\.contains\s*\(',
+        'Build\.MANUFACTURER\.contains\s*\(',
+        'Build\.HARDWARE\.contains\s*\(',
+        'Build\.PRODUCT\.contains\s*\(',
+        '/genyd',
+        
+        # Defence mechanisms
+        'SafetyNetClient'
     )
 }
 
@@ -234,11 +464,11 @@ function Get-VulnerabilitySeverity {
     switch ($Category) {
         "Weak Manifest Permissions" {
             switch -Regex ($Pattern) {
-                'android:debuggable\s*=\s*["\'']true["\'']' { return "Critical" }
+                'android:debuggable\s*=\s*[`"`'']true[`"`'']' { return "Critical" }
                 'android\.permission\.(SYSTEM_ALERT_WINDOW|WRITE_SETTINGS|PACKAGE_USAGE_STATS)' { return "High" }
                 'android\.permission\.(CAMERA|ACCESS_FINE_LOCATION|READ_CONTACTS)' { return "High" }
-                'android:exported\s*=\s*["\'']true["\''][^>]*(?!.*android:permission)' { return "High" }
-                'android:protectionLevel\s*=\s*["\'']normal["\'']' { return "Medium" }
+                'android:exported\s*=\s*[`"`'']true[`"`''][^>]*(?!.*android:permission)' { return "High" }
+                'android:protectionLevel\s*=\s*[`"`'']normal[`"`'']' { return "Medium" }
                 default { return "Medium" }
             }
         }
@@ -254,6 +484,134 @@ function Get-VulnerabilitySeverity {
         "Permission Issues" {
             if ($Pattern -match "dangerous") { return "High" }
             return "Medium"
+        }
+        # New categories and severity assignments
+        "Sensitive Data" {
+            switch -Regex ($Pattern) {
+                '-----BEGIN\s+(?:RSA\s+)?PRIVATE\s+KEY-----' { return "Critical" }
+                '-----BEGIN\s+(?:DSA\s+)?PRIVATE\s+KEY-----' { return "Critical" }
+                '-----BEGIN\s+(?:EC\s+)?PRIVATE\s+KEY-----' { return "Critical" }
+                '-----BEGIN\s+OPENSSH\s+PRIVATE\s+KEY-----' { return "Critical" }
+                '-----BEGIN\s+PGP\s+PRIVATE\s+KEY\s+BLOCK-----' { return "Critical" }
+                '\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b' { return "Medium" }
+                default { return "High" }
+            }
+        }
+        "URLs & Endpoints" { return "Low" }
+        "IP Addresses" {
+            if ($Pattern -match "localhost|\b127\.0\.0\.1\b") { return "Low" }
+            return "Medium"
+        }
+        "Intent and WebView" {
+            switch -Regex ($Pattern) {
+                'webview\s*\.setJavaScriptEnabled\s*=\s*true' { return "High" }
+                'webview\s*\.addJavascriptInterface\s*\(' { return "High" }
+                default { return "Medium" }
+            }
+        }
+        "Provider" {
+            if ($Pattern -match "ContentProvider\.(query|insert|update|delete)") { return "High" }
+            return "Medium"
+        }
+        "Insecure Root Check" { return "Medium" }
+        "Insecure SSL/TLS Configuration" {
+            switch -Regex ($Pattern) {
+                'ALLOW_ALL_HOSTNAME_VERIFIER' { return "Critical" }
+                'AllowAllHostnameVerifier' { return "Critical" }
+                'setHostnameVerifier\s*\(\s*[^)]*ALLOW_ALL' { return "Critical" }
+                'X509TrustManager\s*\{[^\}]*return\s+(null|true)' { return "Critical" }
+                'SSLContext\.getInstance\(\s*[`"`'']SSL[`"`'']' { return "High" }
+                'SSLContext\.getInstance\(\s*[`"`'']TLS[`"`'']' { return "Medium" }
+                'SSLContext\.getInstance\(\s*[`"`'']TLSv1[`"`'']' { return "High" }
+                'SSLContext\.getInstance\(\s*[`"`'']TLSv1\.1[`"`'']' { return "Medium" }
+                'Cipher\.getInstance\(\s*[`"`''](?:DES|DESede)' { return "High" }
+                default { return "High" }
+            }
+        }
+        "Data Storage" {
+            switch -Regex ($Pattern) {
+                'MODE_WORLD_READABLE' { return "High" }
+                'MODE_WORLD_WRITEABLE' { return "High" }
+                'getExternalStorageDirectory' { return "Medium" }
+                'getExternalStoragePublicDirectory' { return "Medium" }
+                'FirebaseDatabase\.getInstance' { return "Medium" }
+                default { return "Low" }
+            }
+        }
+        "Logging and Information Disclosure" {
+            switch -Regex ($Pattern) {
+                'Log\.(v|d|i|w|e)\s*\(' { return "Medium" }
+                'System\.(out|err)\.print' { return "Medium" }
+                'printStackTrace\s*\(' { return "Medium" }
+                'FLAG_SECURE' { return "Low" }
+                'inputType\s*=\s*[`"`'']textPassword[`"`'']' { return "Low" }
+                default { return "Low" }
+            }
+        }
+        "Memory Management" {
+            if ($Pattern -match "ClipboardManager|setPrimaryClip") { return "Medium" }
+            return "Low"
+        }
+        "Hardcoded Sensitive Information" { return "High" }
+        "Cryptography" {
+            switch -Regex ($Pattern) {
+                'Cipher\.getInstance\s*\([`"`''].*?/ECB/' { return "Critical" }
+                'Cipher\.getInstance\s*\([`"`'']DES' { return "Critical" }
+                'Cipher\.getInstance\s*\([`"`'']RC4' { return "High" }
+                'new Random\s*\(' { return "Medium" }
+                'SHA1PRNG' { return "Medium" }
+                'Dual_EC_DRBG' { return "High" }
+                default { return "Medium" }
+            }
+        }
+        "Biometric Authentication" { return "Low" }
+        "Network Security" {
+            switch -Regex ($Pattern) {
+                'SSLCertificateSocketFactory\.getInsecure' { return "Critical" }
+                'onReceivedSslError.*\.proceed\s*\(' { return "Critical" }
+                'HttpURLConnection\)' { return "Medium" }
+                'checkServerTrusted\s*\(' { return "Medium" }
+                '<pin-set' { return "Low" }
+                'certificatePinner' { return "Low" }
+                'ProviderInstaller' { return "Low" }
+                default { return "Medium" }
+            }
+        }
+        "Component Security" {
+            switch -Regex ($Pattern) {
+                '\.evaluateJavascript\s*\(' { return "High" }
+                '\.loadUrl\s*\([`"`'']javascript:' { return "High" }
+                'Runtime\.getRuntime\(\)\.exec\s*\(' { return "Critical" }
+                'setAllowFileAccess\s*\(' { return "Medium" }
+                'setAllowFileAccessFromFileURLs\s*\(' { return "High" }
+                'setAllowUniversalAccessFromFileURLs\s*\(' { return "High" }
+                'setWebContentsDebuggingEnabled\s*\(' { return "Medium" }
+                'addJavascriptInterface\s*\(' { return "High" }
+                'getSerializable' { return "Medium" }
+                'new Gson\(\)' { return "Low" }
+                'checkCallingOrSelfPermission' { return "Low" }
+                'checkSelfPermission' { return "Low" }
+                default { return "Medium" }
+            }
+        }
+        "WebView Cleanup" { return "Low" }
+        "Application Management" {
+            if ($Pattern -match "application/vnd\.android\.package-archive") { return "Medium" }
+            if ($Pattern -match "installApp\s*\(") { return "Medium" }
+            return "Low"
+        }
+        "Development and Debugging" {
+            if ($Pattern -match "isDebuggable|isDebuggerConnected") { return "Medium" }
+            return "Low"
+        }
+        "Obfuscation Detection" { return "Low" }
+        "Security Detection Mechanisms" {
+            switch -Regex ($Pattern) {
+                'isDebuggable|isDebuggerConnected' { return "Low" }
+                '\.getEntry\s*\([`"`'']classes' { return "Low" }
+                'SafetyNetClient' { return "Low" }
+                default { return "Low" }
+            }
         }
         default { return "Low" }
     }
@@ -349,31 +707,6 @@ File: $ManifestPath
     foreach ($flag in $manifestReport.DebugFlags) {
         $reportContent += "`n- $flag"
     }
-    
-    $reportContent += @"
-
-Security Recommendations
-=====================
-1. Permission Hardening:
-   - Remove unnecessary dangerous permissions
-   - Use fine-grained permissions instead of broad ones
-   - Implement runtime permission requests properly
-
-2. Component Security:
-   - Add proper permission protection to all exported components
-   - Remove android:exported="true" where not needed
-   - Use signature or signatureOrSystem protection levels for custom permissions
-
-3. Debug/Security Settings:
-   - Ensure android:debuggable is false in production
-   - Configure android:allowBackup appropriately
-   - Remove android:testOnly flag in production
-
-4. General Security:
-   - Implement intent filters with care
-   - Use explicit intents where possible
-   - Add proper permission checks in exported components
-"@
     
     # Save report
     $reportPath = Join-Path $OutputDir "manifest_permission_analysis.txt"
@@ -496,20 +829,6 @@ Findings by Category:
             $summaryContent += "`n  - $($severity.Severity): $($severity.Count)"
         }
     }
-    
-    $summaryContent += @"
-
-Component Security Analysis:
--------------------------
-- Exported Components: $($results['Component Exports'].Count) findings
-- Intent Vulnerabilities: $($results['Intent Vulnerabilities'].Count) findings
-- Permission Issues: $($results['Permission Issues'].Count) findings
-- Fragment Injection Risks: $($results['Fragment Injection'].Count) findings
-- SQL Injection Vulnerabilities: $($results['SQL Injection'].Count) findings
-
-Critical and High Severity Issues:
-------------------------------
-"@
 
     # Add detailed findings for Critical and High severity issues
     foreach ($category in $results.Keys) {
@@ -523,42 +842,6 @@ Critical and High Severity Issues:
             }
         }
     }
-
-    $summaryContent += @"
-
-Security Recommendations:
-----------------------
-1. Component Security:
-   - Review and secure all exported components
-   - Implement proper permission checks
-   - Use explicit intents where possible
-   - Validate all input from intents and external sources
-
-2. Permission Management:
-   - Remove unused permissions
-   - Request permissions at runtime for Android 6.0+
-   - Use fine-grained permissions instead of broad ones
-   - Implement proper permission checks in components
-
-3. Data Security:
-   - Use parameterized queries for all database operations
-   - Encrypt sensitive data using strong encryption
-   - Avoid storing sensitive data in plaintext
-   - Implement proper key management
-
-4. WebView Security:
-   - Disable JavaScript if not required
-   - Validate all URLs loaded in WebView
-   - Avoid loading remote content if possible
-   - Implement proper SSL/TLS certificate validation
-
-5. Debug Settings:
-   - Remove all debug flags in production
-   - Configure proper backup and security settings
-   - Remove test code and debug configurations
-
-Note: All findings should be manually verified as they may include false positives.
-"@
 
     $summaryContent | Set-Content $summaryFile
 
